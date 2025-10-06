@@ -1,3 +1,5 @@
 {
-  "tasks": {}
+  "tasks": {
+    "test:small": "vitest run --silent --config ./vite.small.config.ts"
+  }
 }

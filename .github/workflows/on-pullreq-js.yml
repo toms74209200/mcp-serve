@@ -1,0 +1,14 @@
+name: On Pull Request(Javascript)
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "*.json"
+      - "*.ts"
+      - ".github/workflows/on-pullreq-js.yml"
+
+jobs:
+  small-test:
+    uses: ./.github/workflows/job-test-small.yml
