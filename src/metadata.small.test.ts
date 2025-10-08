@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { extractMetadata } from "./main.ts";
+import { extractMetadata } from "./metadata.ts";
 
 test("when frontmatter has title then returns title from frontmatter", () => {
   const content = `---
