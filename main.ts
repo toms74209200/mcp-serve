@@ -1,8 +1,11 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { ListResourcesRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import {
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { extractMetadata } from "./src/metadata.ts";
-import { extname, relative } from "@std/path";
+import { extname, join, relative } from "@std/path";
 import { walk } from "@std/fs";
 
 const directory = Deno.args[0] || ".";
@@ -51,6 +54,38 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
   );
 
   return { resources };
+});
+
+server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+  const uri = request.params.uri;
+  if (!uri.startsWith("docs://")) {
+    throw new Error(`Unsupported URI scheme: ${uri}`);
+  }
+
+  const relativePath = uri.slice("docs://".length);
+  const filePath = join(directory, relativePath);
+
+  try {
+    const content = await Deno.readTextFile(filePath);
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: "text/plain",
+          text: content,
+        },
+      ],
+    };
+  } catch (error) {
+    if (error instanceof Deno.errors.NotFound) {
+      throw new Error(`Resource not found: ${uri}`);
+    }
+    if (error instanceof Deno.errors.PermissionDenied) {
+      throw new Error(`Permission denied: ${uri}`);
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read file: ${message}`);
+  }
 });
 
 const transport = new StdioServerTransport();
