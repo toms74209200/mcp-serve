@@ -1,29 +1,57 @@
-const readMarkdownFile = async (filePath: string): Promise<string> => {
-  return await Deno.readTextFile(filePath);
-};
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { ListResourcesRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { extractMetadata } from "./src/metadata.ts";
+import { extname, relative } from "@std/path";
+import { walk } from "@std/fs";
 
-export const extractMetadata = (
-  content: string,
-  filename: string,
-): { title: string; description: string; tags: string[] } => {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  const yaml = frontmatterMatch?.[1] || "";
+const directory = Deno.args[0] || ".";
 
-  const title = yaml.match(/^title:\s*(.+)$/m)?.[1] ||
-    content.replace(/^---\n[\s\S]*?\n---\n/, "").match(/^#\s+(.+)$/m)?.[1] ||
-    filename.replace(/\.md$/, "");
+const server = new Server(
+  {
+    name: "mcp-serve",
+    version: "0.1.0",
+  },
+  {
+    capabilities: {
+      resources: {
+        subscribe: false,
+        listChanged: true,
+      },
+      tools: {},
+    },
+  },
+);
 
-  const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n/, "");
-  const firstParagraph = bodyContent.split("\n").find((line) => {
-    const trimmed = line.trim();
-    return trimmed && !trimmed.startsWith("#");
-  })?.trim() || "";
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
+  const SUPPORTED_EXTENSIONS = [".md", ".html", ".txt"] as const;
 
-  const description =
-    (yaml.match(/^description:\s*(.+)$/m)?.[1] || firstParagraph).slice(0, 150);
+  const entries = await Array.fromAsync(
+    walk(directory, { includeDirs: false }),
+  );
+  const resources = await Promise.all(
+    entries
+      .filter((entry) =>
+        (SUPPORTED_EXTENSIONS as readonly string[]).includes(
+          extname(entry.path),
+        )
+      )
+      .map(async (entry) => {
+        const content = await Deno.readTextFile(entry.path);
+        const metadata = extractMetadata(content, entry.name);
 
-  const tagsMatch = yaml.match(/^tags:\s*\[(.+)\]$/m);
-  const tags = tagsMatch ? tagsMatch[1].split(",").map((t) => t.trim()) : [];
+        return {
+          uri: `docs://${relative(directory, entry.path)}`,
+          name: entry.name,
+          title: metadata.title,
+          description: metadata.description,
+          mimeType: "text/markdown",
+        };
+      }),
+  );
 
-  return { title, description, tags };
-};
+  return { resources };
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);
