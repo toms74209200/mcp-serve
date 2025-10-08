@@ -12,3 +12,5 @@ on:
 jobs:
   small-test:
     uses: ./.github/workflows/job-test-small.yml
+  medium-test:
+    uses: ./.github/workflows/job-test-medium.yml
