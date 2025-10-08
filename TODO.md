@@ -1,5 +1,5 @@
 - [x] Read Markdown file content
 - [x] Extract metadata from Markdown (title, description, tags)
-- [ ] resources/list endpoint implementation
-- [ ] resources/read endpoint implementation
+- [x] resources/list endpoint implementation
+- [x] resources/read endpoint implementation
 - [ ] Entry point with command-line argument support
