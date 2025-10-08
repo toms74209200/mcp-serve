@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.1",
+    "@std/path": "npm:@jsr/std__path@^1.1.2",
+    "@std/fs": "npm:@jsr/std__fs@^1.0.19",
     "zod": "^3.25.76"
   },
   "devDependencies": {
