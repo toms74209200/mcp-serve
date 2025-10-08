@@ -117,11 +117,6 @@ docs://notes/memo.txt
       "title": "Project Overview",
       "description": "This project is...",
       "mimeType": "text/markdown",
-      "annotations": {
-        "lastModified": "2025-10-05T10:30:00Z",
-        "priority": 0.5,
-        "audience": ["user", "assistant"]
-      }
     }
   ]
 }
