@@ -262,3 +262,86 @@ test(
   },
   1000,
 );
+
+test(
+  "when calling search_documents tool then returns search results",
+  async () => {
+    const command = new Deno.Command("deno", {
+      args: ["run", "-A", "--no-check", `${Deno.cwd()}/main.ts`, "docs"],
+      stdin: "piped",
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const child = command.spawn();
+
+    const writer = child.stdin.getWriter();
+    const reader = child.stdout.pipeThrough(new TextDecoderStream())
+      .getReader();
+
+    const readLines = async () => {
+      const line = await reader.read();
+      if (line.done) {
+        return;
+      }
+      try {
+        return JSON.parse(line.value);
+      } catch {
+        return await readLines();
+      }
+    };
+
+    await writer.write(new TextEncoder().encode(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: "init-1",
+        method: "initialize",
+        params: {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "test-client", version: "1.0.0" },
+        },
+      }) + "\n",
+    ));
+
+    await readLines();
+
+    await writer.write(new TextEncoder().encode(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: "list-1",
+        method: "resources/list",
+      }) + "\n",
+    ));
+
+    await readLines();
+
+    await writer.write(new TextEncoder().encode(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: "search-1",
+        method: "tools/call",
+        params: {
+          name: "search_documents",
+          arguments: {
+            query: "specification",
+          },
+        },
+      }) + "\n",
+    ));
+
+    const actual = await readLines();
+
+    expect(actual.result.content).toBeInstanceOf(Array);
+    expect(actual.result.content.length).toBeGreaterThan(0);
+    expect(actual.result.content[0].type).toBe("text");
+    const searchResult = JSON.parse(actual.result.content[0].text);
+    expect(searchResult.query).toBe("specification");
+    expect(searchResult.totalResults).toBeGreaterThan(0);
+    expect(searchResult.results).toBeInstanceOf(Array);
+
+    await writer.close();
+    child.kill("SIGTERM");
+    await child.status;
+  },
+  1000,
+);

@@ -193,7 +193,7 @@ docs://notes/memo.txt
   "content": [
     {
       "type": "text",
-      "text": "Search results: 3 matches\n\n1. docs://guides/setup.md - \"Setup Guide\" (relevance: 0.95)\n   Excerpt: ...installation steps are as follows...\n   Match location: content"
+      "text": "{\"query\":\"setup\",\"searchIn\":\"both\",\"totalResults\":3,\"results\":[{\"uri\":\"docs://guides/setup.md\",\"title\":\"Setup Guide\",\"description\":\"Installation steps...\",\"score\":0.95}]}"
     }
   ]
 }
