@@ -1,14 +1,18 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
+  CallToolRequestSchema,
   ListResourcesRequestSchema,
+  ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { extractMetadata } from "./src/metadata.ts";
 import { extname, join, relative } from "@std/path";
 import { walk } from "@std/fs";
+import MiniSearch from "minisearch";
 
 const directory = Deno.args[0] || ".";
+const SUPPORTED_EXTENSIONS = [".md", ".html", ".txt"] as const;
 
 const server = new Server(
   {
@@ -26,9 +30,16 @@ const server = new Server(
   },
 );
 
-server.setRequestHandler(ListResourcesRequestSchema, async () => {
-  const SUPPORTED_EXTENSIONS = [".md", ".html", ".txt"] as const;
+const miniSearch = new MiniSearch({
+  fields: ["title", "content"],
+  storeFields: ["title", "description", "uri", "name"],
+  searchOptions: {
+    boost: { title: 2 },
+    fuzzy: 0.2,
+  },
+});
 
+server.setRequestHandler(ListResourcesRequestSchema, async () => {
   const entries = await Array.fromAsync(
     walk(directory, { includeDirs: false }),
   );
@@ -51,6 +62,18 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
           mimeType: "text/markdown",
         };
       }),
+  );
+
+  miniSearch.removeAll();
+  miniSearch.addAll(
+    resources.map((resource, index) => ({
+      id: index.toString(),
+      uri: resource.uri,
+      name: resource.name,
+      title: resource.title,
+      description: resource.description,
+      content: `${resource.title} ${resource.description}`,
+    })),
   );
 
   return { resources };
@@ -86,6 +109,95 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to read file: ${message}`);
   }
+});
+
+server.setRequestHandler(ListToolsRequestSchema, () => {
+  return {
+    tools: [
+      {
+        name: "search_documents",
+        description: "Search documents by title or content",
+        inputSchema: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "Search query",
+            },
+            searchIn: {
+              type: "string",
+              enum: ["title", "content", "both"],
+              description: "Search target: title, content, or both",
+              default: "both",
+            },
+            limit: {
+              type: "number",
+              description: "Maximum number of results",
+              default: 10,
+            },
+            fileTypes: {
+              type: "array",
+              items: { type: "string" },
+              description: "File extensions to search (e.g., ['.md', '.html'])",
+            },
+          },
+          required: ["query"],
+        },
+      },
+    ],
+  };
+});
+
+server.setRequestHandler(CallToolRequestSchema, (request) => {
+  if (request.params.name === "search_documents") {
+    const {
+      query,
+      searchIn = "both",
+      limit = 10,
+      fileTypes = SUPPORTED_EXTENSIONS,
+    } = request.params.arguments as {
+      query: string;
+      searchIn?: "title" | "content" | "both";
+      limit?: number;
+      fileTypes?: string[];
+    };
+
+    const results = miniSearch.search(query, {
+      fuzzy: 0.2,
+      ...(searchIn === "title" ? { fields: ["title"] } : {}),
+      ...(searchIn === "content" ? { fields: ["content"] } : {}),
+    })
+      .filter((result) =>
+        !fileTypes?.length ||
+        fileTypes.some((ext) => result.name.endsWith(ext))
+      )
+      .toSpliced(limit);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              query,
+              searchIn,
+              totalResults: results.length,
+              results: results.map((result) => ({
+                uri: result.uri,
+                title: result.title,
+                description: result.description,
+                score: result.score,
+              })),
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  }
+
+  throw new Error(`Unknown tool: ${request.params.name}`);
 });
 
 const transport = new StdioServerTransport();

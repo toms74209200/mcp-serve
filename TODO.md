@@ -2,4 +2,4 @@
 - [x] Extract metadata from Markdown (title, description, tags)
 - [x] resources/list endpoint implementation
 - [x] resources/read endpoint implementation
-- [ ] Entry point with command-line argument support
+- [x] Entry point with command-line argument support
