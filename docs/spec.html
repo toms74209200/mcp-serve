@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Specification</title>
+  <meta name="description" content="An MCP (Model Context Protocol) server that automatically indexes document files (Markdown, HTML, plain text) in a directory and provides them to LLMs.">
+</head>
+<body>
+  <article>
+    <h1>Specification</h1>
+
+    <h2>Overview</h2>
+    <p>An MCP (Model Context Protocol) server that automatically indexes document files (Markdown, HTML, plain text) in a directory and provides them to LLMs.</p>
+
+    <h3>Concept</h3>
+    <ul>
+      <li><strong>No additional markup required</strong>: Works out-of-the-box without frontmatter</li>
+      <li><strong>Multiple format support</strong>: Auto-recognizes .md, .html, .txt</li>
+      <li><strong>Automatic metadata extraction</strong>: Automatically extracts titles and descriptions</li>
+      <li><strong>Efficient access</strong>: Quick access to needed documents via search functionality</li>
+    </ul>
+
+    <hr>
+
+    <h2>Supported File Formats</h2>
+    <ul>
+      <li><code>.md</code> - Markdown</li>
+      <li><code>.html</code> - HTML</li>
+      <li><code>.txt</code> - Plain text</li>
+    </ul>
+
+    <hr>
+
+    <h2>Automatic Metadata Extraction Logic</h2>
+
+    <h3>Markdown Files (.md)</h3>
+    <p><strong>Title extraction priority:</strong></p>
+    <ol>
+      <li>Frontmatter <code>title</code> field</li>
+      <li>First <code># heading</code> (H1)</li>
+      <li>Filename (without extension)</li>
+    </ol>
+
+    <p><strong>Description extraction priority:</strong></p>
+    <ol>
+      <li>Frontmatter <code>description</code> field</li>
+      <li>First paragraph (first text block that isn't a heading)</li>
+      <li>Trimmed to ~150 characters</li>
+    </ol>
+
+    <p><strong>Tags:</strong></p>
+    <ul>
+      <li>Use frontmatter <code>tags</code> array if available</li>
+      <li>Empty array if not present</li>
+    </ul>
+
+    <h3>HTML Files (.html)</h3>
+    <p><strong>Title extraction priority:</strong></p>
+    <ol>
+      <li><code>&lt;title&gt;</code> tag</li>
+      <li>First <code>&lt;h1&gt;</code> tag</li>
+      <li>Filename (without extension)</li>
+    </ol>
+
+    <p><strong>Description extraction priority:</strong></p>
+    <ol>
+      <li><code>&lt;meta name="description" content="..."&gt;</code> tag</li>
+      <li>First <code>&lt;p&gt;</code> tag text</li>
+      <li>Trimmed to ~150 characters</li>
+    </ol>
+
+    <p><strong>Content processing:</strong></p>
+    <ul>
+      <li>Convert HTML tags to markdown text</li>
+      <li>Exclude script and style tags</li>
+    </ul>
+
+    <h3>Text Files (.txt)</h3>
+    <p><strong>Title extraction:</strong></p>
+    <ul>
+      <li>Use first line as title</li>
+      <li>Use filename if first line is empty</li>
+    </ul>
+
+    <p><strong>Description extraction:</strong></p>
+    <ul>
+      <li>Content from lines 2-4</li>
+      <li>Trimmed to ~150 characters</li>
+    </ul>
+
+    <p><strong>Content:</strong></p>
+    <ul>
+      <li>Provide entire file as-is</li>
+    </ul>
+
+    <hr>
+
+    <h2>MCP Specification Implementation</h2>
+
+    <h3>Capabilities</h3>
+    <pre><code>{
+  "capabilities": {
+    "resources": {
+      "subscribe": false,
+      "listChanged": true
+    },
+    "tools": {}
+  }
+}</code></pre>
+
+    <hr>
+
+    <h2>Resources</h2>
+
+    <h3>URI Scheme</h3>
+    <pre><code>docs://README.md
+docs://guides/getting-started.md
+docs://api/reference.html
+docs://notes/memo.txt</code></pre>
+
+    <h3>resources/list</h3>
+    <p><strong>Request:</strong></p>
+    <pre><code>{
+  "method": "resources/list"
+}</code></pre>
+
+    <p><strong>Response:</strong></p>
+    <pre><code>{
+  "resources": [
+    {
+      "uri": "docs://README.md",
+      "name": "README.md",
+      "title": "Project Overview",
+      "description": "This project is...",
+      "mimeType": "text/markdown",
+    }
+  ]
+}</code></pre>
+
+    <h3>resources/read</h3>
+    <p><strong>Request:</strong></p>
+    <pre><code>{
+  "method": "resources/read",
+  "params": {
+    "uri": "docs://guides/setup.md"
+  }
+}</code></pre>
+
+    <p><strong>Response:</strong></p>
+    <pre><code>{
+  "contents": [
+    {
+      "uri": "docs://guides/setup.md",
+      "mimeType": "text/markdown",
+      "text": "# Setup Guide\n\n## Requirements\n\n..."
+    }
+  ]
+}</code></pre>
+
+    <hr>
+
+    <h2>Tools</h2>
+
+    <h3>search_documents</h3>
+    <p><strong>Definition:</strong></p>
+    <pre><code>{
+  name: "search_documents",
+  description: "Search documents by title or content",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "Search query"
+      },
+      searchIn: {
+        type: "string",
+        enum: ["title", "content", "both"],
+        description: "Search target: title, content, or both",
+        default: "both"
+      },
+      limit: {
+        type: "number",
+        description: "Maximum number of results",
+        default: 10
+      },
+      fileTypes: {
+        type: "array",
+        items: { type: "string" },
+        description: "File extensions to search"
+      }
+    },
+    required: ["query"]
+  }
+}</code></pre>
+
+    <p><strong>Response:</strong></p>
+    <pre><code>{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"query\":\"setup\",\"searchIn\":\"both\",\"totalResults\":3,\"results\":[{\"uri\":\"docs://guides/setup.md\",\"title\":\"Setup Guide\",\"description\":\"Installation steps...\",\"score\":0.95}]}"
+    }
+  ]
+}</code></pre>
+
+    <hr>
+
+    <h2>Server Startup</h2>
+    <p><strong>Directory specification:</strong></p>
+    <ul>
+      <li>Command-line argument: <code>deno run jsr:@toms/mcp-serve /path/to/documents</code></li>
+      <li>Default: <code>.</code></li>
+    </ul>
+  </article>
+</body>
+</html>
