@@ -1,25 +1,86 @@
-export const extractMetadata = (
+import { convertHtmlToText } from "./html-converter.ts";
+
+type Metadata = {
+  title: string;
+  description: string;
+  tags: string[];
+};
+
+type MetadataExtractor = (
   content: string,
   filename: string,
-): { title: string; description: string; tags: string[] } => {
+) => Metadata;
+
+const extractFromFrontmatter: MetadataExtractor = (content, _filename) => {
   const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
   const yaml = frontmatterMatch?.[1] || "";
 
-  const title = yaml.match(/^title:\s*(.+)$/m)?.[1] ||
-    content.replace(/^---\n[\s\S]*?\n---\n/, "").match(/^#\s+(.+)$/m)?.[1] ||
-    filename.replace(/\.md$/, "");
+  const title = yaml.match(/^title:\s*(.+)$/m)?.[1] || "";
+  const description = yaml.match(/^description:\s*(.+)$/m)?.[1] || "";
+  const tagsMatch = yaml.match(/^tags:\s*\[(.+)\]$/m);
+  const tags = tagsMatch ? tagsMatch[1].split(",").map((t) => t.trim()) : [];
 
+  return { title, description, tags };
+};
+
+const extractFromHTML: MetadataExtractor = (content, filename) => {
+  if (!filename.endsWith(".html")) {
+    return { title: "", description: "", tags: [] };
+  }
+  const htmlData = convertHtmlToText(content);
+  return {
+    title: htmlData.title,
+    description: htmlData.excerpt || htmlData.textContent.slice(0, 150),
+    tags: [],
+  };
+};
+
+const extractFromMarkdown: MetadataExtractor = (content, _filename) => {
   const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n/, "");
+  const h1Match = bodyContent.match(/^#\s+(.+)$/m);
+  const title = h1Match?.[1] || "";
+
   const firstParagraph = bodyContent.split("\n").find((line) => {
     const trimmed = line.trim();
     return trimmed && !trimmed.startsWith("#");
   })?.trim() || "";
 
-  const description =
-    (yaml.match(/^description:\s*(.+)$/m)?.[1] || firstParagraph).slice(0, 150);
+  return { title, description: firstParagraph, tags: [] };
+};
 
-  const tagsMatch = yaml.match(/^tags:\s*\[(.+)\]$/m);
-  const tags = tagsMatch ? tagsMatch[1].split(",").map((t) => t.trim()) : [];
+const extractFromFilename: MetadataExtractor = (_content, filename) => {
+  return {
+    title: filename.replace(/\.(md|html|txt)$/, ""),
+    description: "",
+    tags: [],
+  };
+};
 
-  return { title, description, tags };
+const extractors: MetadataExtractor[] = [
+  extractFromFrontmatter,
+  extractFromHTML,
+  extractFromMarkdown,
+  extractFromFilename,
+];
+
+const mergeMetadata = (acc: Metadata, current: Metadata): Metadata => ({
+  title: acc.title || current.title,
+  description: acc.description || current.description,
+  tags: [...acc.tags, ...current.tags],
+});
+
+export const extractMetadata = (
+  content: string,
+  filename: string,
+): Metadata => {
+  const results = extractors.map((extractor) => extractor(content, filename));
+  const merged = results.reduce(
+    mergeMetadata,
+    { title: "", description: "", tags: [] },
+  );
+
+  return {
+    ...merged,
+    description: merged.description.slice(0, 150),
+  };
 };
