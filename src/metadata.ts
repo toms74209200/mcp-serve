@@ -35,6 +35,24 @@ const extractFromHTML: MetadataExtractor = (content, filename) => {
   };
 };
 
+const extractFromMDX: MetadataExtractor = (content, filename) => {
+  if (!filename.endsWith(".mdx")) {
+    return { title: "", description: "", tags: [] };
+  }
+
+  const contentWithoutFrontmatter = content.replace(
+    /^---\n[\s\S]*?\n---\n/,
+    "",
+  );
+
+  const htmlData = convertHtmlToText(contentWithoutFrontmatter);
+  return {
+    title: htmlData.title,
+    description: htmlData.excerpt || htmlData.textContent.slice(0, 150),
+    tags: [],
+  };
+};
+
 const extractFromMarkdown: MetadataExtractor = (content, _filename) => {
   const bodyContent = content.replace(/^---\n[\s\S]*?\n---\n/, "");
   const h1Match = bodyContent.match(/^#\s+(.+)$/m);
@@ -50,7 +68,7 @@ const extractFromMarkdown: MetadataExtractor = (content, _filename) => {
 
 const extractFromFilename: MetadataExtractor = (_content, filename) => {
   return {
-    title: filename.replace(/\.(md|html|txt)$/, ""),
+    title: filename.replace(/\.(md|mdx|html|txt)$/, ""),
     description: "",
     tags: [],
   };
@@ -59,6 +77,7 @@ const extractFromFilename: MetadataExtractor = (_content, filename) => {
 const extractors: MetadataExtractor[] = [
   extractFromFrontmatter,
   extractFromHTML,
+  extractFromMDX,
   extractFromMarkdown,
   extractFromFilename,
 ];
