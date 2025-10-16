@@ -82,3 +82,60 @@ Content.`;
   const result = extractMetadata(content, "test.md");
   expect(result.tags).toEqual([]);
 });
+
+test("when mdx file with frontmatter then returns metadata from frontmatter", () => {
+  const content = `---
+title: MDX Title
+description: MDX description
+---
+
+# Heading
+
+<CustomComponent />
+
+Content here.`;
+
+  const result = extractMetadata(content, "test.mdx");
+  expect(result.title).toBe("MDX Title");
+  expect(result.description).toBe("MDX description");
+});
+
+test("when mdx file with custom JSX components then extracts text content", () => {
+  const content = `---
+title: MDX with JSX
+---
+
+# Main Heading
+
+<CustomComponent prop="value">
+  Some content inside component
+</CustomComponent>
+
+Regular paragraph text.
+
+<AnotherComponent />`;
+
+  const result = extractMetadata(content, "test.mdx");
+  expect(result.title).toBe("MDX with JSX");
+});
+
+test("when mdx file with standard HTML tags then parses correctly", () => {
+  const content = `# HTML in MDX
+
+<div>
+  <p>This is a paragraph in a div.</p>
+</div>
+
+Regular text.`;
+
+  const result = extractMetadata(content, "test.mdx");
+  expect(result.title).toBe("HTML in MDX");
+  expect(result.description).toContain("paragraph");
+});
+
+test("when mdx filename then removes mdx extension", () => {
+  const content = `Content.`;
+
+  const result = extractMetadata(content, "my-file.mdx");
+  expect(result.title).toBe("my-file");
+});
