@@ -7,12 +7,14 @@ import {
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { extractMetadata } from "./src/metadata.ts";
+import { convertHtmlToText } from "./src/html-converter.ts";
+import { convertMdxToText } from "./src/mdx-converter.ts";
 import { extname, join, relative } from "@std/path";
 import { walk } from "@std/fs";
 import MiniSearch from "minisearch";
 
 const directory = Deno.args[0] || ".";
-const SUPPORTED_EXTENSIONS = [".md", ".html", ".txt"] as const;
+const SUPPORTED_EXTENSIONS = [".md", ".mdx", ".html", ".txt"] as const;
 
 const server = new Server(
   {
@@ -89,7 +91,16 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const filePath = join(directory, relativePath);
 
   try {
-    const content = await Deno.readTextFile(filePath);
+    let content = await Deno.readTextFile(filePath);
+    const ext = extname(filePath);
+
+    if (ext === ".html") {
+      const converted = convertHtmlToText(content);
+      content = converted.textContent;
+    } else if (ext === ".mdx") {
+      content = convertMdxToText(content);
+    }
+
     return {
       contents: [
         {
