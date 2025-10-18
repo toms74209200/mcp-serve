@@ -1,4 +1,23 @@
 {
+  "name": "@toms/mcp-serve",
+  "description": "Model Context Protocol(MCP) server for serving documentation",
+  "version": "0.1.0",
+  "license": "MIT",
+  "exports": {
+    ".": "./main.ts"
+  },
+  "publish": {
+    "include": [
+      "main.ts",
+      "src/**/*.ts",
+      "LICENSE",
+      "README.md"
+    ],
+    "exclude": [
+      "*.config.ts",
+      "*.test.ts"
+    ]
+  },
   "tasks": {
     "test:small": "vitest run --silent --config ./vite.small.config.ts",
     "test:medium": "vitest run --silent --config ./vite.medium.config.ts"
