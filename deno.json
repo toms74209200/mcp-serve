@@ -14,8 +14,8 @@
       "README.md"
     ],
     "exclude": [
-      "*.config.ts",
-      "*.test.ts"
+      "**/*.config.ts",
+      "**/*.test.ts"
     ]
   },
   "tasks": {
