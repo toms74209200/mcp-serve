@@ -14,7 +14,7 @@ import { walk } from "@std/fs";
 import MiniSearch from "minisearch";
 
 const directory = Deno.args[0] || ".";
-const SUPPORTED_EXTENSIONS = [".md", ".mdx", ".html", ".txt"] as const;
+const SUPPORTED_EXTENSIONS = [".md", ".mdx", ".html", ".txt", ".rst"] as const;
 
 const server = new Server(
   {

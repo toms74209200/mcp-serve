@@ -66,9 +66,47 @@ const extractFromMarkdown: MetadataExtractor = (content, _filename) => {
   return { title, description: firstParagraph, tags: [] };
 };
 
+const extractFromReStructuredText: MetadataExtractor = (content, filename) => {
+  if (!filename.endsWith(".rst")) {
+    return { title: "", description: "", tags: [] };
+  }
+
+  const lines = content.split("\n");
+
+  const titleEntry = lines
+    .map((line, index) => ({ line, index, nextLine: lines[index + 1] }))
+    .filter(({ line }) => line.trim())
+    .filter(({ nextLine }) => {
+      const nextTrimmed = nextLine?.trim() || "";
+      return /^[=\-`:'".~^_*+#]{3,}$/.test(nextTrimmed);
+    })
+    .filter(({ line, nextLine }) => {
+      const trimmed = line.trim();
+      const nextTrimmed = nextLine?.trim() || "";
+      return nextTrimmed.length >= trimmed.length;
+    })
+    .at(0);
+
+  const title = titleEntry?.line.trim() || "";
+  const titleLineIndex = titleEntry?.index ?? -1;
+
+  const description = titleLineIndex >= 0
+    ? lines
+      .slice(titleLineIndex + 2)
+      .filter((line) => line.trim())
+      .filter((line) => !line.startsWith(" ") && !line.startsWith("\t"))
+      .filter((line) => !line.trim().startsWith(".."))
+      .filter((line) => !line.trim().startsWith(":"))
+      .filter((line) => !/^[=\-`:'".~^_*+#]{3,}$/.test(line.trim()))
+      .at(0)?.trim() || ""
+    : "";
+
+  return { title, description, tags: [] };
+};
+
 const extractFromFilename: MetadataExtractor = (_content, filename) => {
   return {
-    title: filename.replace(/\.(md|mdx|html|txt)$/, ""),
+    title: filename.replace(/\.(md|mdx|html|txt|rst)$/, ""),
     description: "",
     tags: [],
   };
@@ -78,6 +116,7 @@ const extractors: MetadataExtractor[] = [
   extractFromFrontmatter,
   extractFromHTML,
   extractFromMDX,
+  extractFromReStructuredText,
   extractFromMarkdown,
   extractFromFilename,
 ];

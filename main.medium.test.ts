@@ -330,7 +330,6 @@ test(
   1000,
 );
 
-
 test(
   "when reading HTML file then returns converted text",
   async () => {
@@ -609,6 +608,141 @@ test(
     expect(actual.result.contents[0].text).not.toContain("<CustomComponent");
     expect(actual.result.contents[0].text).not.toContain("<AnotherComponent");
     expect(actual.result.contents[0].text).toContain("Specification");
+
+    await writer.close();
+    child.kill("SIGTERM");
+    await child.status;
+  },
+  1000,
+);
+
+test(
+  "when listing resources then includes RST files with metadata",
+  async () => {
+    const command = new Deno.Command("deno", {
+      args: ["run", "-A", "--no-check", `${Deno.cwd()}/main.ts`, "docs"],
+      stdin: "piped",
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const child = command.spawn();
+
+    const writer = child.stdin.getWriter();
+    const reader = child.stdout.pipeThrough(new TextDecoderStream())
+      .getReader();
+
+    const readLines = async () => {
+      const line = await reader.read();
+      if (line.done) {
+        return;
+      }
+      try {
+        return JSON.parse(line.value);
+      } catch {
+        return await readLines();
+      }
+    };
+
+    await writer.write(new TextEncoder().encode(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: "init-1",
+        method: "initialize",
+        params: {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "test-client", version: "1.0.0" },
+        },
+      }) + "\n",
+    ));
+
+    await readLines();
+
+    await writer.write(new TextEncoder().encode(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: "list-1",
+        method: "resources/list",
+      }) + "\n",
+    ));
+
+    const actual = await readLines();
+
+    expect(actual.result.resources).toBeInstanceOf(Array);
+    const rstResource = actual.result.resources.find((r: any) =>
+      r.uri === "docs://spec.rst"
+    );
+    expect(rstResource).toBeDefined();
+    expect(rstResource.title).toBe("Specification");
+    expect(rstResource.description).toBe("Overview");
+
+    await writer.close();
+    child.kill("SIGTERM");
+    await child.status;
+  },
+  1000,
+);
+
+test(
+  "when reading RST file then returns text content",
+  async () => {
+    const command = new Deno.Command("deno", {
+      args: ["run", "-A", "--no-check", `${Deno.cwd()}/main.ts`, "docs"],
+      stdin: "piped",
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const child = command.spawn();
+
+    const writer = child.stdin.getWriter();
+    const reader = child.stdout.pipeThrough(new TextDecoderStream())
+      .getReader();
+
+    const readLines = async () => {
+      const line = await reader.read();
+      if (line.done) {
+        return;
+      }
+      try {
+        return JSON.parse(line.value);
+      } catch {
+        return await readLines();
+      }
+    };
+
+    await writer.write(new TextEncoder().encode(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: "init-1",
+        method: "initialize",
+        params: {
+          protocolVersion: "2024-11-05",
+          capabilities: {},
+          clientInfo: { name: "test-client", version: "1.0.0" },
+        },
+      }) + "\n",
+    ));
+
+    await readLines();
+
+    await writer.write(new TextEncoder().encode(
+      JSON.stringify({
+        jsonrpc: "2.0",
+        id: "read-1",
+        method: "resources/read",
+        params: {
+          uri: "docs://spec.rst",
+        },
+      }) + "\n",
+    ));
+
+    const actual = await readLines();
+
+    expect(actual.result.contents).toBeInstanceOf(Array);
+    expect(actual.result.contents[0].text).toBeTruthy();
+    expect(actual.result.contents[0].text).toContain("Specification");
+    expect(actual.result.contents[0].text).toContain("Model Context Protocol");
+    expect(actual.result.contents[0].mimeType).toBe("text/plain");
 
     await writer.close();
     child.kill("SIGTERM");
