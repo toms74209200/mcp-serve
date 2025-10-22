@@ -139,3 +139,61 @@ test("when mdx filename then removes mdx extension", () => {
   const result = extractMetadata(content, "my-file.mdx");
   expect(result.title).toBe("my-file");
 });
+
+test("when rst file with underlined title then returns title", () => {
+  const content = `My Title
+========
+
+First paragraph here.`;
+
+  const result = extractMetadata(content, "test.rst");
+  expect(result.title).toBe("My Title");
+});
+
+test("when rst file with title then returns first paragraph as description", () => {
+  const content = `My Title
+========
+
+This is the first paragraph.
+
+Second paragraph.`;
+
+  const result = extractMetadata(content, "test.rst");
+  expect(result.title).toBe("My Title");
+  expect(result.description).toBe("This is the first paragraph.");
+});
+
+test("when rst file with directives then skips directives in description", () => {
+  const content = `My Title
+========
+
+:some-directive: value
+
+.. code-block:: python
+
+    print("hello")
+
+This is the first real paragraph.`;
+
+  const result = extractMetadata(content, "test.rst");
+  expect(result.title).toBe("My Title");
+  expect(result.description).toBe("This is the first real paragraph.");
+});
+
+test("when rst file with different underline characters then recognizes title", () => {
+  const content = `Section Title
+-------------
+
+Content here.`;
+
+  const result = extractMetadata(content, "test.rst");
+  expect(result.title).toBe("Section Title");
+  expect(result.description).toBe("Content here.");
+});
+
+test("when rst filename then removes rst extension", () => {
+  const content = `Content.`;
+
+  const result = extractMetadata(content, "my-file.rst");
+  expect(result.title).toBe("my-file");
+});
