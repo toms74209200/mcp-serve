@@ -6,9 +6,7 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { extractMetadata } from "./src/metadata.ts";
-import { convertHtmlToText } from "./src/html-converter.ts";
-import { convertMdxToText } from "./src/mdx-converter.ts";
+import { parseFile } from "./src/content-parser.ts";
 import { extname, join, relative } from "@std/path";
 import { walk } from "@std/fs";
 import MiniSearch from "minisearch";
@@ -54,7 +52,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
       )
       .map(async (entry) => {
         const content = await Deno.readTextFile(entry.path);
-        const metadata = extractMetadata(content, entry.name);
+        const { metadata, textContent } = parseFile(content, entry.name);
 
         return {
           uri: `docs://${relative(directory, entry.path)}`,
@@ -62,6 +60,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
           title: metadata.title,
           description: metadata.description,
           mimeType: "text/markdown",
+          fullContent: textContent,
         };
       }),
   );
@@ -74,7 +73,7 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
       name: resource.name,
       title: resource.title,
       description: resource.description,
-      content: `${resource.title} ${resource.description}`,
+      content: resource.fullContent,
     })),
   );
 
@@ -91,22 +90,15 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const filePath = join(directory, relativePath);
 
   try {
-    let content = await Deno.readTextFile(filePath);
-    const ext = extname(filePath);
-
-    if (ext === ".html") {
-      const converted = convertHtmlToText(content);
-      content = converted.textContent;
-    } else if (ext === ".mdx") {
-      content = convertMdxToText(content);
-    }
+    const content = await Deno.readTextFile(filePath);
+    const { textContent } = parseFile(content, filePath);
 
     return {
       contents: [
         {
           uri,
           mimeType: "text/plain",
-          text: content,
+          text: textContent,
         },
       ],
     };
