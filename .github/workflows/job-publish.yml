@@ -40,6 +40,7 @@ jobs:
           deno compile \
             --allow-read \
             --allow-net \
+            --allow-env \
             --target ${{ matrix.target }} \
             --output mcp-serve-${{ matrix.target }} \
             main.ts
