@@ -5,6 +5,8 @@
 
 Model Context Protocol(MCP) server for serving documentation.
 
+![Next.js document example](/docs/nextjs-example.png)
+
 ## Requirements
 
 - Deno 2.0.0 or later (recommended)
