@@ -11,6 +11,8 @@ Model Context Protocol(MCP) server for serving documentation.
 
 ## Usage
 
+### Using Deno
+
 To use it from Deno, you need the file read and environment variable permissions.
 
 ```bash
@@ -36,6 +38,44 @@ For Visual Studio Code:
         "--allow-read",
         "--allow-env",
         "jsr:@toms/mcp-serve",
+        "/path/to/your/docs"
+      ]
+    }
+  }
+}
+```
+
+### Using Pre-built Binary (Linux)
+
+If you want to use mcp-serve as a single binary without installing Deno:
+
+```bash
+ARCH=$(uname -m) && \
+case "$ARCH" in
+    x86_64) BINARY="mcp-serve-x86_64-unknown-linux-gnu";;
+    aarch64|arm64) BINARY="mcp-serve-aarch64-unknown-linux-gnu";;
+    *) echo "Unsupported architecture: $ARCH"; exit 1;;
+esac && \
+VERSION=$(curl -s https://api.github.com/repos/toms74209200/mcp-serve/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
+sudo mkdir -p /opt/mcp-serve && \
+sudo curl -L -o /opt/mcp-serve/mcp-serve "https://github.com/toms74209200/mcp-serve/releases/download/${VERSION}/${BINARY}" && \
+sudo chmod +x /opt/mcp-serve/mcp-serve && \
+sudo ln -sf /opt/mcp-serve/mcp-serve /usr/local/bin/mcp-serve
+```
+
+```bash
+mcp-serve [directory]
+```
+
+**`mcp.json`**
+
+```json
+{
+  "servers": {
+    "mcp-serve": {
+      "type": "stdio",
+      "command": "mcp-serve",
+      "args": [
         "/path/to/your/docs"
       ]
     }
