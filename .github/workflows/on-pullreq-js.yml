@@ -14,3 +14,19 @@ jobs:
     uses: ./.github/workflows/job-test-small.yml
   medium-test:
     uses: ./.github/workflows/job-test-medium.yml
+  update-dependencies-lock:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    uses: ./.github/workflows/job-update-dependencies-lock.yml
+    permissions:
+      contents: write
+  auto-merge:
+    needs:
+      - small-test
+      - medium-test
+      - update-dependencies-lock
+    uses: ./.github/workflows/job-auto-merge.yml
+    with:
+      approve-update-type: "version-update:semver-patch,version-update:semver-minor"
+    permissions:
+      contents: write
+      pull-requests: write
