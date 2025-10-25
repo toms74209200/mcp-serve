@@ -9,7 +9,7 @@
     "npm:@jsr/std__fs@^1.0.19": "1.0.19",
     "npm:@jsr/std__path@^1.1.2": "1.1.2",
     "npm:@modelcontextprotocol/sdk@^1.18.1": "1.20.2_express@5.1.0_zod@3.25.76",
-    "npm:@mozilla/readability@0.5": "0.5.0",
+    "npm:@mozilla/readability@0.6": "0.6.0",
     "npm:@types/jsdom@^21.1.7": "21.1.7",
     "npm:jsdom@^25.0.1": "25.0.1",
     "npm:minisearch@*": "7.2.0",
@@ -244,8 +244,8 @@
         "zod-to-json-schema"
       ]
     },
-    "@mozilla/readability@0.5.0": {
-      "integrity": "sha512-Z+CZ3QaosfFaTqvhQsIktyGrjFjSC0Fa4EMph4mqKnWhmyoGICsV/8QK+8HpXut6zV7zwfWwqDmEjtk1Qf6EgQ=="
+    "@mozilla/readability@0.6.0": {
+      "integrity": "sha512-juG5VWh4qAivzTAeMzvY9xs9HY5rAcr2E4I7tiSSCokRFi7XIZCAu92ZkSTsIj1OPceCifL3cpfteP3pDT9/QQ=="
     },
     "@pagefind/darwin-arm64@1.4.0": {
       "integrity": "sha512-2vMqkbv3lbx1Awea90gTaBsvpzgRs7MuSgKDxW0m9oV1GPZCZbZBJg/qL83GIUEN2BFlY46dtUZi54pwH+/pTQ==",
@@ -1466,7 +1466,7 @@
         "npm:@jsr/std__fs@^1.0.19",
         "npm:@jsr/std__path@^1.1.2",
         "npm:@modelcontextprotocol/sdk@^1.18.1",
-        "npm:@mozilla/readability@0.5",
+        "npm:@mozilla/readability@0.6",
         "npm:@types/jsdom@^21.1.7",
         "npm:jsdom@^25.0.1",
         "npm:minisearch@^7.2.0",
