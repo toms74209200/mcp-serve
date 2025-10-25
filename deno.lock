@@ -8,7 +8,7 @@
     "jsr:@std/path@^1.1.1": "1.1.2",
     "npm:@jsr/std__fs@^1.0.19": "1.0.19",
     "npm:@jsr/std__path@^1.1.2": "1.1.2",
-    "npm:@modelcontextprotocol/sdk@^1.18.1": "1.19.1_express@5.1.0_zod@3.25.76",
+    "npm:@modelcontextprotocol/sdk@^1.18.1": "1.20.2_express@5.1.0_zod@3.25.76",
     "npm:@mozilla/readability@0.5": "0.5.0",
     "npm:@types/jsdom@^21.1.7": "21.1.7",
     "npm:jsdom@^25.0.1": "25.0.1",
@@ -16,8 +16,7 @@
     "npm:minisearch@^7.2.0": "7.2.0",
     "npm:pagefind@*": "1.4.0",
     "npm:vite@^7.1.7": "7.1.9_picomatch@4.0.3",
-    "npm:vitest@^3.2.4": "3.2.4_vite@7.1.9__picomatch@4.0.3_jsdom@25.0.1",
-    "npm:zod@^3.25.76": "3.25.76"
+    "npm:vitest@^3.2.4": "3.2.4_vite@7.1.9__picomatch@4.0.3_jsdom@25.0.1"
   },
   "jsr": {
     "@std/fs@1.0.19": {
@@ -228,8 +227,8 @@
       ],
       "tarball": "https://npm.jsr.io/~/11/@jsr/std__path/1.1.2.tgz"
     },
-    "@modelcontextprotocol/sdk@1.19.1_express@5.1.0_zod@3.25.76": {
-      "integrity": "sha512-3Y2h3MZKjec1eAqSTBclATlX+AbC6n1LgfVzRMJLt3v6w0RCYgwLrjbxPDbhsYHt6Wdqc/aCceNJYgj448ELQQ==",
+    "@modelcontextprotocol/sdk@1.20.2_express@5.1.0_zod@3.25.76": {
+      "integrity": "sha512-6rqTdFt67AAAzln3NOKsXRmv5ZzPkgbfaebKBqUbts7vK1GZudqnrun5a8d3M/h955cam9RHZ6Jb4Y1XhnmFPg==",
       "dependencies": [
         "ajv",
         "content-type",
@@ -1472,8 +1471,7 @@
         "npm:jsdom@^25.0.1",
         "npm:minisearch@^7.2.0",
         "npm:vite@^7.1.7",
-        "npm:vitest@^3.2.4",
-        "npm:zod@^3.25.76"
+        "npm:vitest@^3.2.4"
       ]
     }
   }
