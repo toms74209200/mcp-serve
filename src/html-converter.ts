@@ -18,8 +18,8 @@ export const convertHtmlToText = (
   }
 
   return {
-    textContent: article.textContent,
-    title: article.title,
-    excerpt: article.excerpt,
+    textContent: article.textContent ?? "",
+    title: article.title ?? "",
+    excerpt: article.excerpt ?? "",
   };
 };
