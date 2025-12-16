@@ -44,7 +44,7 @@ jobs:
             --output mcp-serve-${{ matrix.target }} \
             main.ts
       - name: Upload Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: mcp-serve-${{ matrix.target }}
           path: mcp-serve-${{ matrix.target }}*
